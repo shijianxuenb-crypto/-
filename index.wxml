@@ -1,0 +1,224 @@
+<view class="page">
+  <view class="header">
+    <view class="brand">
+      <view class="logo">时</view>
+      <view>
+        <view class="brand-title">时间守护者</view>
+        <view class="brand-subtitle">TimeKeeper 微信小程序版</view>
+      </view>
+    </view>
+    <view class="date">{{todayText}}</view>
+  </view>
+
+  <view class="tabs">
+    <view wx:for="{{tabs}}" wx:key="key" class="tab {{activeTab === item.key ? 'active' : ''}}" bindtap="switchTab" data-key="{{item.key}}">
+      {{item.label}}
+    </view>
+  </view>
+
+  <view wx:if="{{activeTab === 'home'}}" class="section">
+    <view class="card current-card">
+      <view class="card-head">
+        <text class="card-title">当前任务</text>
+        <text class="muted">{{currentTask.statusText}}</text>
+      </view>
+      <view class="hero">
+        <view>
+          <view class="hero-title">{{currentTask.title}}</view>
+          <view class="hero-meta">{{currentTask.meta}}</view>
+        </view>
+        <view class="hero-time">{{currentTask.time}}</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">快速添加</text>
+        <text class="muted">自然语言</text>
+      </view>
+      <view class="quick-add">
+        <input class="input" value="{{quickText}}" bindinput="onQuickInput" placeholder="例如：写报告2小时，上午完成" />
+        <button class="primary-btn" bindtap="addQuickTask">添加</button>
+      </view>
+    </view>
+
+    <view class="metrics">
+      <view class="metric-card">
+        <text class="muted">今日任务</text>
+        <text class="metric-number">{{stats.total}}</text>
+        <view class="bar"><view class="bar-inner" style="width: {{stats.totalRate}}%;"></view></view>
+      </view>
+      <view class="metric-card">
+        <text class="muted">已完成</text>
+        <text class="metric-number">{{stats.done}}</text>
+        <view class="bar"><view class="bar-inner" style="width: {{stats.doneRate}}%;"></view></view>
+      </view>
+      <view class="metric-card">
+        <text class="muted">计划时长</text>
+        <text class="metric-number small">{{stats.minutes}} 分钟</text>
+        <view class="bar"><view class="bar-inner" style="width: {{stats.minuteRate}}%;"></view></view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">今日待办</text>
+        <text class="muted">{{tasks.length}} 项</text>
+      </view>
+      <block wx:if="{{tasks.length}}">
+        <view wx:for="{{tasks}}" wx:key="id" class="task {{item.status === 'done' ? 'done' : ''}}">
+          <view class="check" bindtap="toggleDone" data-id="{{item.id}}">{{item.status === 'done' ? '✓' : ''}}</view>
+          <view class="task-main">
+            <view class="task-title">{{item.title}}</view>
+            <view class="task-meta">
+              <text>{{item.timeText}}</text>
+              <text>{{item.duration}} 分钟</text>
+              <text class="tag {{item.priority}}">{{item.priorityText}}</text>
+              <text class="tag">{{item.deadlineText}}</text>
+            </view>
+          </view>
+          <view class="task-actions">
+            <button class="icon-btn" bindtap="startTask" data-id="{{item.id}}">{{item.status === 'running' ? '停' : '始'}}</button>
+            <button class="icon-btn" bindtap="openEdit" data-id="{{item.id}}">编</button>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="empty">今天还没有任务。先添加一句“写报告2小时”。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{activeTab === 'plan'}}" class="section">
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">自然语言计划</text>
+        <text class="muted">可一次输入多条</text>
+      </view>
+      <textarea class="textarea" value="{{planText}}" bindinput="onPlanInput" placeholder="写周报1小时，上午完成&#10;复习考试3小时，必须今天完成&#10;运动30分钟，晚上完成" />
+      <view class="btn-row">
+        <button class="secondary-btn" bindtap="previewPlan">解析预览</button>
+        <button class="primary-btn" bindtap="addPlanTasks">加入计划</button>
+      </view>
+      <view class="preview">
+        <view wx:for="{{previewItems}}" wx:key="index" class="preview-line">{{item}}</view>
+        <view wx:if="{{!previewItems.length}}" class="muted">输入计划后，这里会显示解析结果。</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">时间线</text>
+        <text class="muted">{{settings.startHour}}:00 - {{settings.endHour}}:00</text>
+      </view>
+      <view wx:for="{{timeline}}" wx:key="id" class="slot">
+        <text class="slot-time">{{item.startText}}</text>
+        <view class="slot-card">
+          <view class="slot-title">{{item.title}}</view>
+          <view class="muted">{{item.timeText}} · {{item.duration}} 分钟</view>
+          <button class="calendar-btn" bindtap="addCalendar" data-id="{{item.id}}">加入手机日历提醒</button>
+        </view>
+      </view>
+      <view wx:if="{{!timeline.length}}" class="empty">暂无排期。</view>
+    </view>
+  </view>
+
+  <view wx:if="{{activeTab === 'stats'}}" class="section">
+    <view class="metrics">
+      <view class="metric-card">
+        <text class="muted">完成率</text>
+        <text class="metric-number">{{stats.doneRate}}%</text>
+        <view class="bar"><view class="bar-inner" style="width: {{stats.doneRate}}%;"></view></view>
+      </view>
+      <view class="metric-card">
+        <text class="muted">专注时长</text>
+        <text class="metric-number small">{{stats.focus}} 分钟</text>
+        <view class="bar"><view class="bar-inner" style="width: {{stats.focusRate}}%;"></view></view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">优先级分布</text>
+        <text class="muted">按计划时长</text>
+      </view>
+      <view class="distribution">
+        <view class="dist-row">
+          <text>高优先级</text>
+          <view class="bar flex"><view class="bar-inner high" style="width: {{distribution.high}}%;"></view></view>
+          <text>{{distribution.highMinutes}}分</text>
+        </view>
+        <view class="dist-row">
+          <text>中优先级</text>
+          <view class="bar flex"><view class="bar-inner" style="width: {{distribution.medium}}%;"></view></view>
+          <text>{{distribution.mediumMinutes}}分</text>
+        </view>
+        <view class="dist-row">
+          <text>低优先级</text>
+          <view class="bar flex"><view class="bar-inner low" style="width: {{distribution.low}}%;"></view></view>
+          <text>{{distribution.lowMinutes}}分</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{activeTab === 'profile'}}" class="section">
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">提醒能力说明</text>
+      </view>
+      <view class="note">
+        微信小程序不能直接控制手机闹钟。当前版本支持把任务添加到手机日历，由系统日历发出提醒；如需真正控制闹钟，需要开发 Android 原生 App。
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">工作时段</text>
+        <text class="muted">自动排期范围</text>
+      </view>
+      <view class="setting-row">
+        <text>开始时间</text>
+        <picker mode="selector" range="{{hourOptions}}" value="{{startIndex}}" bindchange="changeStartHour">
+          <view class="picker">{{settings.startHour}}:00</view>
+        </picker>
+      </view>
+      <view class="setting-row">
+        <text>结束时间</text>
+        <picker mode="selector" range="{{hourOptions}}" value="{{endIndex}}" bindchange="changeEndHour">
+          <view class="picker">{{settings.endHour}}:00</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">数据管理</text>
+        <text class="muted">保存在微信本地</text>
+      </view>
+      <view class="btn-row">
+        <button class="secondary-btn" bindtap="clearDone">清除已完成</button>
+        <button class="danger-btn" bindtap="resetData">重置数据</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{editing}}" class="modal-mask">
+    <view class="modal">
+      <view class="card-head">
+        <text class="card-title">编辑任务</text>
+        <text class="close" bindtap="closeEdit">关闭</text>
+      </view>
+      <input class="input" value="{{editForm.title}}" bindinput="editTitle" placeholder="任务名称" />
+      <input class="input" type="number" value="{{editForm.duration}}" bindinput="editDuration" placeholder="预计时长（分钟）" />
+      <picker mode="selector" range="{{priorityOptions}}" range-key="label" value="{{editPriorityIndex}}" bindchange="editPriority">
+        <view class="picker full">优先级：{{editForm.priorityText}}</view>
+      </picker>
+      <picker mode="selector" range="{{deadlineOptions}}" range-key="label" value="{{editDeadlineIndex}}" bindchange="editDeadline">
+        <view class="picker full">截止偏好：{{editForm.deadlineText}}</view>
+      </picker>
+      <view class="btn-row">
+        <button class="danger-btn" bindtap="deleteTask">删除</button>
+        <button class="primary-btn" bindtap="saveEdit">保存</button>
+      </view>
+    </view>
+  </view>
+</view>
